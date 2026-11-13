@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KIỂM TRA THỜI GIAN Y LỆNH</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<style>
+:root{--bg:#f0f8f9;--card:#fff;--text:#12343b;--muted:#5b7b82;--line:#cfe5e8;--red:#fde2e2;--redt:#b42318;--green:#e0f5ea;--greent:#12684a;--gray:#e8f1f3;--amber:#fff1d6;--ambert:#8a5a00;--accent:#0e8f9c;--accent2:#0b6e79}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1a1d;--card:#15262a;--text:#e3f1f3;--muted:#8fb0b6;--line:#244046;--red:#4a1f21;--redt:#ff9a93;--green:#12362a;--greent:#7fe0b4;--gray:#1d3338;--amber:#41331a;--ambert:#f5c46b;--accent:#35c2cf;--accent2:#35c2cf}}
+*{box-sizing:border-box}
+body{margin:0;border-top:5px solid var(--accent);background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+main{max-width:920px;margin:0 auto;padding:20px 14px 40px}
+h1{font-size:20px;margin:0 0 4px;display:flex;align-items:center;gap:10px;color:var(--accent2);letter-spacing:.02em}
+h1::before{content:"✚";display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;font-size:18px;flex:none}
+p.sub{margin:0 0 14px;color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 1px 3px rgba(14,143,156,.08)}
+ol{margin:6px 0 0;padding-left:20px;color:var(--muted)}
+#zone{border:2px dashed var(--accent);border-radius:10px;padding:8px 12px;min-height:44px;font-size:14px;text-align:center;font-weight:600;margin-bottom:10px;outline:none;cursor:text;caret-color:transparent;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+#zone *{pointer-events:none}
+.stat{min-height:20px;margin-bottom:8px;font-weight:600}
+.stat.err{color:var(--redt)}
+.hint{color:var(--muted);font-size:13px;margin-bottom:6px}
+textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--bg);color:var(--text);font:13px/1.5 ui-monospace,Consolas,monospace;resize:vertical}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+button{border:0;border-radius:8px;padding:10px 18px;font:inherit;font-weight:600;cursor:pointer;background:var(--accent2);color:#fff}
+button:hover{filter:brightness(1.08)}
+@media (prefers-color-scheme:dark){button:not(.ghost){color:#06262b}h1::before{color:#06262b}}
+button.ghost{background:var(--gray);color:var(--text)}
+label{display:flex;gap:6px;align-items:center;color:var(--muted);cursor:pointer}
+.sum{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.pill{padding:6px 12px;border-radius:999px;font-weight:600}
+.p-red{background:var(--red);color:var(--redt)}.p-green{background:var(--green);color:var(--greent)}.p-gray{background:var(--gray);color:var(--muted)}.p-amber{background:var(--amber);color:var(--ambert)}
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;color:var(--accent2);background:var(--gray);text-transform:uppercase;letter-spacing:.03em}
+tr.bad td{background:var(--red);color:var(--redt);font-weight:600}
+tr.ok td{background:var(--green);color:var(--greent)}
+tr.skip td{color:var(--muted)}
+tr.warn td{background:var(--amber);color:var(--ambert)}
+.mono{font-family:ui-monospace,Consolas,monospace}
+.empty{color:var(--muted);text-align:center;padding:18px}
+</style>
+</head>
+<body>
+<main>
+<h1>KIỂM TRA THỜI GIAN Y LỆNH</h1>
+<p class="sub">Quy tắc: NGAY_YL phải <b>nhỏ hơn</b> NGAY_TH_YL. Lớn hơn hoặc bằng thì bôi <b style="color:var(--redt)">đỏ</b>.</p>
+
+<div class="card">
+<b>Cách dùng</b>
+<ol>
+<li>Copy ảnh bảng, không cần lưu file: nhấn <b>Win+Shift+S</b> rồi kéo chọn vùng bảng.</li>
+<li>Nhấn vào <b>ô dán ảnh</b> bên dưới rồi nhấn <b>Ctrl+V</b>. Ảnh được đọc ngay trên máy của bạn và kiểm tra tự động.</li>
+<li>Nếu đọc sai chữ số nào, sửa trong ô văn bản rồi nhấn <b>Kiểm tra</b>. Ảnh càng to và rõ thì càng ít sai.</li>
+</ol>
+</div>
+
+<div class="card">
+<div id="zone" contenteditable="true" spellcheck="false" role="textbox" aria-label="Ô dán ảnh"><span>📋 Nhấn vào đây rồi bấm <b>Ctrl+V</b> để dán ảnh đã copy</span></div>
+<div id="stat" class="stat"></div>
+<div class="hint">Dữ liệu đọc từ ảnh hiện ở ô dưới. Bạn cũng có thể dán trực tiếp dữ liệu dạng chữ vào ô này.</div>
+<textarea id="inp" placeholder="202611030942&#9;202611030959&#9;202611031147"></textarea>
+<div class="row">
+<button id="go">Kiểm tra</button>
+<button class="ghost" id="demo">Dữ liệu mẫu</button>
+<button class="ghost" id="clr">Xóa</button>
+<label><input type="checkbox" id="only"> Chỉ hiện dòng lỗi</label>
+</div>
+</div>
+
+<div class="card" id="out" hidden>
+<div class="sum" id="sum"></div>
+<div class="wrap"><table>
+<thead><tr><th>#</th><th>NGAY_YL</th><th>NGAY_TH_YL</th><th>NGAY_KQ</th><th>Kết quả</th></tr></thead>
+<tbody id="body"></tbody>
+</table></div>
+</div>
+</main>
+
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var re=/^\d{12}$/;
+function parse(s){
+  if(!re.test(s))return null;
+  var y=+s.slice(0,4),mo=+s.slice(4,6),d=+s.slice(6,8),h=+s.slice(8,10),mi=+s.slice(10,12);
+  var dt=new Date(Date.UTC(y,mo-1,d,h,mi));
+  if(dt.getUTCFullYear()!==y||dt.getUTCMonth()!==mo-1||dt.getUTCDate()!==d||h>23||mi>59)return null;
+  return dt.getTime();
+}
+function fmt(s){
+  if(!s)return "";
+  if(!re.test(s))return s;
+  return s.slice(6,8)+"/"+s.slice(4,6)+"/"+s.slice(0,4)+" "+s.slice(8,10)+":"+s.slice(10,12);
+}
+function esc(s){return String(s).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
+function cells(line){
+  var c=line.indexOf("\t")>=0?line.split("\t"):line.trim().split(/[\s,;|]+/);
+  return c.map(function(x){return x.trim()});
+}
+function run(){
+  var lines=$("inp").value.split(/\r?\n/);
+  var rows=[],n=0;
+  lines.forEach(function(l){
+    if(!l.trim())return;
+    var c=cells(l);
+    if(!/\d{8,}/.test(c[0]||""))return;
+    n++;
+    rows.push({n:n,yl:c[0]||"",th:c[1]||"",kq:c[2]||""});
+  });
+  var bad=0,ok=0,skip=0,warn=0,html="";
+  rows.forEach(function(r){
+    var cls,msg;
+    if(!r.th){cls="skip";msg="Chưa thực hiện";skip++;}
+    else{
+      var a=parse(r.yl),b=parse(r.th);
+      if(a===null||b===null){cls="warn";msg="Sai định dạng (kiểm tra lại số)";warn++;}
+      else if(a>b){cls="bad";msg="LỖI: chỉ định lớn hơn thực hiện";bad++;}
+      else if(a===b){cls="bad";msg="LỖI: chỉ định bằng thực hiện";bad++;}
+      else{cls="ok";msg="Đúng";ok++;}
+    }
+    r.cls=cls;r.msg=msg;
+  });
+  var only=$("only").checked;
+  rows.forEach(function(r){
+    if(only&&r.cls!=="bad"&&r.cls!=="warn")return;
+    html+='<tr class="'+r.cls+'"><td>'+r.n+'</td><td class="mono">'+esc(fmt(r.yl))+'</td><td class="mono">'+esc(fmt(r.th))+'</td><td class="mono">'+esc(fmt(r.kq))+'</td><td>'+r.msg+'</td></tr>';
+  });
+  if(!html)html='<tr><td class="empty" colspan="5">'+(rows.length?'Không có dòng lỗi.':'Chưa có dữ liệu hợp lệ. Hãy dán lại.')+'</td></tr>';
+  $("body").innerHTML=html;
+  $("sum").innerHTML='<span class="pill p-red">Lỗi (đỏ): '+bad+'</span><span class="pill p-green">Đúng: '+ok+'</span><span class="pill p-gray">Chưa thực hiện: '+skip+'</span>'+(warn?'<span class="pill p-amber">Sai định dạng: '+warn+'</span>':'')+'<span class="pill p-gray">Tổng: '+rows.length+'</span>';
+  $("out").hidden=false;
+}
+
+/* ---------- OCR ---------- */
+function setStat(t,err){$("stat").textContent=t;$("stat").className="stat"+(err?" err":"")}
+var workerP=null;
+function getWorker(){
+  if(!window.Tesseract)return Promise.reject(new Error("no-lib"));
+  if(!workerP){
+    workerP=Tesseract.createWorker("eng",1,{logger:function(m){
+      if(m.status==="recognizing text")setStat("Đang đọc ảnh... "+Math.round(m.progress*100)+"%");
+    }}).then(function(w){
+      return w.setParameters({tessedit_char_whitelist:"0123456789",tessedit_pageseg_mode:"11"}).then(function(){return w});
+    });
+    workerP.catch(function(){workerP=null});
+  }
+  return workerP;
+}
+function upscale(blob){
+  return new Promise(function(res,rej){
+    var url=URL.createObjectURL(blob),img=new Image();
+    img.onload=function(){
+      var k=img.width<1400?3:2;
+      var c=document.createElement("canvas");
+      c.width=img.width*k;c.height=img.height*k;
+      var x=c.getContext("2d");
+      x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);
+      x.imageSmoothingQuality="high";
+      x.drawImage(img,0,0,c.width,c.height);
+      res(c);
+    };
+    img.onerror=function(){rej(new Error("bad-image"))};
+    img.src=url;
+  });
+}
+function median(a){a=a.slice().sort(function(x,y){return x-y});return a[Math.floor(a.length/2)]||1}
+function allWords(data){
+  if(data.words&&data.words.length)return data.words;
+  var out=[];
+  (data.blocks||[]).forEach(function(b){(b.paragraphs||[]).forEach(function(p){(p.lines||[]).forEach(function(l){(l.words||[]).forEach(function(w){out.push(w)})})})});
+  return out;
+}
+function toTable(words){
+  var it=[];
+  words.forEach(function(w){
+    var t=(w.text||"").replace(/\D/g,"");
+    if(t.length>=8&&w.bbox){
+      it.push({t:t,cx:(w.bbox.x0+w.bbox.x1)/2,cy:(w.bbox.y0+w.bbox.y1)/2,w:w.bbox.x1-w.bbox.x0,h:w.bbox.y1-w.bbox.y0});
+    }
+  });
+  if(!it.length)return [];
+  var mw=median(it.map(function(i){return i.w})),mh=median(it.map(function(i){return i.h}));
+  it.sort(function(a,b){return a.cx-b.cx});
+  var col=0;
+  it.forEach(function(i,k){if(k&&i.cx-it[k-1].cx>mw*0.6)col++;i.col=col});
+  it.sort(function(a,b){return a.cy-b.cy});
+  var rows=[],cur=[];
+  it.forEach(function(i){
+    if(cur.length&&i.cy-cur[cur.length-1].cy>mh*0.8){rows.push(cur);cur=[]}
+    cur.push(i);
+  });
+  if(cur.length)rows.push(cur);
+  return rows.map(function(r){
+    var c=["","",""];
+    r.forEach(function(i){if(i.col<3)c[i.col]=i.t});
+    return c.join("\t");
+  });
+}
+var busy=false;
+function handleImage(blob){
+  if(busy)return;
+  busy=true;
+  $("out").hidden=true;
+  setStat("Đang tải bộ đọc chữ (lần đầu mất vài giây, cần Internet)...");
+  upscale(blob).then(function(canvas){
+    return getWorker().then(function(w){setStat("Đang đọc ảnh...");return w.recognize(canvas)});
+  }).then(function(r){
+    var lines=toTable(allWords(r.data));
+    if(!lines.length){setStat("Không đọc được số nào. Hãy chụp ảnh to và rõ hơn.",true);return}
+    $("inp").value=lines.join("\n");
+    setStat("Đã đọc "+lines.length+" dòng. Nếu thấy sai số, hãy sửa trong ô bên dưới rồi nhấn Kiểm tra.");
+    run();
+  }).catch(function(e){
+    setStat(e&&e.message==="no-lib"?"Chưa tải được thư viện đọc chữ. Hãy kiểm tra kết nối Internet rồi tải lại trang.":"Đọc ảnh thất bại. Hãy thử lại với ảnh khác.",true);
+  }).then(function(){busy=false});
+}
+document.addEventListener("paste",function(e){
+  var it=(e.clipboardData&&e.clipboardData.items)||[];
+  for(var i=0;i<it.length;i++){
+    if(it[i].type.indexOf("image")===0){var f=it[i].getAsFile();if(f){e.preventDefault();handleImage(f);return}}
+  }
+  if(e.target===$("zone")){
+    e.preventDefault();
+    var t=e.clipboardData&&e.clipboardData.getData("text");
+    if(t&&t.trim()){$("inp").value=t;setStat("");run()}
+    else setStat("Không thấy ảnh trong bộ nhớ tạm. Hãy copy ảnh rồi dán lại.",true);
+  }
+});
+$("zone").addEventListener("beforeinput",function(e){e.preventDefault()});
+$("zone").addEventListener("keydown",function(e){if(!(e.ctrlKey||e.metaKey))e.preventDefault()});
+$("zone").addEventListener("dragover",function(e){e.preventDefault()});
+$("zone").addEventListener("drop",function(e){e.preventDefault();var f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(f&&f.type.indexOf("image")===0)handleImage(f)});
+try{$("zone").focus()}catch(x){}
+
+$("go").onclick=run;
+$("only").onchange=function(){if(!$("out").hidden)run()};
+$("clr").onclick=function(){$("inp").value="";$("out").hidden=true;setStat("")};
+$("demo").onclick=function(){
+  $("inp").value=["202611030942\t\t","202611030942\t202611030959\t202611031147","202611030942\t202611030942\t202611031147","202611050000\t202611050000\t202611052359","202611061341\t202611080000\t202611082359","202611030942\t202611030900\t202611031128"].join("\n");
+  run();
+};
+})();
+</script>
+</body>
+</html>
